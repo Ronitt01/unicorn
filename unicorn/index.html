@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unicorn Companies Analysis Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css">
+    <script src="https://cdn.jsdelivr.net/npm/mapbox-gl@2.15.0/dist/mapbox-gl.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mapbox-gl@2.15.0/dist/mapbox-gl.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <img src="assets/unicorn-logo.svg" alt="Unicorn Logo" width="40" height="40" class="d-inline-block align-text-top me-2">
+                <span class="brand-text">Unicorn Insights</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link active" href="#">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#interactive-viz">Interactive Viz</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#industry-analysis">Industry Analysis</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#timeline-feature">Timeline</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#growth-calculator">Growth Calculator</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#global-map">Global Map</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="display-4 fw-bold animate__animated animate__fadeInLeft">Unicorn Companies Analysis</h1>
+                    <p class="lead animate__animated animate__fadeInLeft animate__delay-1s">Explore the world of billion-dollar startups with interactive data visualizations and predictive analytics.</p>
+                </div>
+                <div class="col-md-6 text-center animate__animated animate__fadeInRight">
+                    <div class="hero-stats">
+                        <div class="stat-card">
+                            <h2 id="total-unicorns-hero">0</h2>
+                            <p>Total Unicorns</p>
+                        </div>
+                        <div class="stat-card">
+                            <h2 id="avg-valuation-hero">$0B</h2>
+                            <p>Avg. Valuation</p>
+                        </div>
+                        <div class="stat-card">
+                            <h2 id="growth-rate-hero">0%</h2>
+                            <p>YoY Growth</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card filter-panel">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Filters</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="year-range" class="form-label">Year Range</label>
+                            <div class="d-flex">
+                                <select id="start-year" class="form-select me-2">
+                                    <!-- Will be populated by JavaScript -->
+                                </select>
+                                <select id="end-year" class="form-select">
+                                    <!-- Will be populated by JavaScript -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="industry-select" class="form-label">Industry</label>
+                            <select id="industry-select" class="form-select" multiple>
+                                <!-- Will be populated by JavaScript -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="valuation-range" class="form-label">Valuation Range ($B)</label>
+                            <div class="d-flex align-items-center">
+                                <input type="number" id="min-valuation" class="form-control me-2" min="0" step="0.1">
+                                <span>to</span>
+                                <input type="number" id="max-valuation" class="form-control ms-2" min="0" step="0.1">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="region-select" class="form-label">Region</label>
+                            <select id="region-select" class="form-select">
+                                <option value="all">All Regions</option>
+                                <option value="north-america">North America</option>
+                                <option value="europe">Europe</option>
+                                <option value="asia">Asia</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <button id="apply-filters" class="btn btn-primary w-100">Apply Filters</button>
+                        <button id="reset-filters" class="btn btn-outline-secondary w-100 mt-2">Reset</button>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="summary-stats">
+                            <!-- Will be populated by JavaScript -->
+                            <div class="stat-item">
+                                <h3 id="total-unicorns">0</h3>
+                                <p>Total Unicorns</p>
+                            </div>
+                            <div class="stat-item">
+                                <h3 id="avg-valuation">$0B</h3>
+                                <p>Average Valuation</p>
+                            </div>
+                            <div class="stat-item">
+                                <h3 id="super-unicorns">0</h3>
+                                <p>Super Unicorns</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-9">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Unicorn Growth Trends</h5>
+                                <div class="chart-controls">
+                                    <button class="btn btn-sm btn-light" data-view="yearly">Yearly</button>
+                                    <button class="btn btn-sm btn-outline-light" data-view="cumulative">Cumulative</button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="growth-trend-chart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Visualization Section -->
+                <div id="interactive-viz" class="row">
+                    <div class="col-12">
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Interactive Data Visualization</h5>
+                                <div class="viz-controls">
+                                    <button class="btn btn-sm btn-light" data-viz="bubble">Bubble</button>
+                                    <button class="btn btn-sm btn-outline-light" data-viz="scatter">Scatter</button>
+                                    <button class="btn btn-sm btn-outline-light" data-viz="tree">Tree Map</button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="interactive-visualization" style="height: 400px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">Industry Distribution</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="industry-distribution-chart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">Valuation Categories</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="valuation-categories-chart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline Feature -->
+                <div id="timeline-feature" class="row">
+                    <div class="col-12">
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">Unicorn Journey Timeline</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="company-selector mb-3">
+                                    <label for="timeline-company" class="form-label">Select Company</label>
+                                    <select id="timeline-company" class="form-select">
+                                        <!-- Will be populated by JavaScript -->
+                                    </select>
+                                </div>
+                                <div id="company-timeline" style="height: 300px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="industry-analysis" class="row">
+                    <div class="col-12">
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">Industry Comparison</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="industry-comparison-chart" style="height: 400px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="growth-calculator" class="row">
+                    <div class="col-12">
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">Unicorn Growth Calculator</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="calculator-industry" class="form-label">Industry</label>
+                                            <select id="calculator-industry" class="form-select">
+                                                <!-- Will be populated by JavaScript -->
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="calculator-current-valuation" class="form-label">Current Valuation ($M)</label>
+                                            <input type="number" id="calculator-current-valuation" class="form-control" min="0">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="calculator-founded-year" class="form-label">Founded Year</label>
+                                            <input type="number" id="calculator-founded-year" class="form-control" min="1900">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="calculator-funding" class="form-label">Total Funding ($M)</label>
+                                            <input type="number" id="calculator-funding" class="form-control" min="0">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="calculator-growth-rate" class="form-label">Annual Growth Rate (%)</label>
+                                            <input type="range" id="calculator-growth-rate" class="form-range" min="5" max="100" step="5">
+                                            <div class="d-flex justify-content-between">
+                                                <span>5%</span>
+                                                <span id="growth-rate-value">50%</span>
+                                                <span>100%</span>
+                                            </div>
+                                        </div>
+                                        <button id="calculate-growth" class="btn btn-primary">Calculate Potential</button>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div id="calculator-results" class="p-3 border rounded h-100">
+                                            <h6 class="border-bottom pb-2 mb-3">Growth Projection</h6>
+                                            <div id="projection-results">
+                                                <p>Enter company details to see growth projection</p>
+                                                <div class="prediction-result d-none">
+                                                    <div class="prediction-metric mb-2">
+                                                        <span class="fw-bold">Estimated Unicorn Date:</span>
+                                                        <span id="unicorn-date-prediction" class="ms-2">-</span>
+                                                    </div>
+                                                    <div class="prediction-metric mb-2">
+                                                        <span class="fw-bold">Years to Unicorn:</span>
+                                                        <span id="years-to-unicorn" class="ms-2">-</span>
+                                                    </div>
+                                                    <div class="prediction-metric mb-2">
+                                                        <span class="fw-bold">Projected Valuation:</span>
+                                                        <span id="projected-valuation" class="ms-2">-</span>
+                                                    </div>
+                                                    <div class="prediction-metric">
+                                                        <span class="fw-bold">Confidence Score:</span>
+                                                        <div class="progress mt-1">
+                                                            <div id="confidence-score" class="progress-bar bg-primary" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="global-map" class="row">
+                    <div class="col-12">
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">Global Unicorn Distribution</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="map" style="height: 500px;"></div>
+                                <div class="map-controls mt-3">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="mapView" id="map-view-markers" value="markers" checked>
+                                        <label class="form-check-label" for="map-view-markers">Markers</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="mapView" id="map-view-heatmap" value="heatmap">
+                                        <label class="form-check-label" for="map-view-heatmap">Heatmap</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="mapView" id="map-view-clusters" value="clusters">
+                                        <label class="form-check-label" for="map-view-clusters">Clusters</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Company Details Modal -->
+    <div class="modal fade" id="company-details-modal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="company-name">Company Name</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Company Details</h6>
+                            <table class="table">
+                                <tr>
+                                    <th>Industry</th>
+                                    <td id="company-industry"></td>
+                                </tr>
+                                <tr>
+                                    <th>Founded</th>
+                                    <td id="company-founded"></td>
+                                </tr>
+                                <tr>
+                                    <th>Unicorn Date</th>
+                                    <td id="company-unicorn-date"></td>
+                                </tr>
+                                <tr>
+                                    <th>Valuation</th>
+                                    <td id="company-valuation"></td>
+                                </tr>
+                                <tr>
+                                    <th>Category</th>
+                                    <td id="company-category"></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Growth Metrics</h6>
+                            <canvas id="company-growth-chart" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white mt-5 py-3">
+        <div class="container text-center">
+            <p class="mb-0">Unicorn Insights Dashboard © 2023 | Data Analysis Tool</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
